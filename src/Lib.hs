@@ -3,26 +3,28 @@ module Lib
   )
 where
 
+import Data.Function ((&))
 import qualified Data.List as List
 import Data.Maybe (fromMaybe)
+import Data.Monoid (Sum (Sum, getSum))
 
 readLines :: String -> IO [String]
 readLines = fmap lines . readFile
 
-countIncreasing :: [Int] -> Int
-countIncreasing measurements =
-  List.length (filter id (zipWith (>) (drop 1 measurements) measurements))
+type WindowSize = Int
 
-sumLists :: [Int] -> [Int] -> [Int]
-sumLists = zipWith (+)
+countIncreasing :: WindowSize -> [Int] -> Int
+countIncreasing n measurements =
+  zipWith (>) (drop n measurements) measurements
+    & foldMap (Sum . fromEnum)
+    & getSum
 
 day01 :: IO ()
 day01 = do
-  measurements <- fmap (read :: String -> Int) <$> readLines "./input/day01"
+  measurements <- fmap read <$> readLines "./input/day01"
 
-  let increasingCount = countIncreasing measurements
+  let increasingCount = countIncreasing 1 measurements
   putStrLn $ "Number of increasing measurements: " ++ show increasingCount
 
-  let tripleSum = sumLists (drop 2 measurements) (sumLists (drop 1 measurements) measurements)
-  let increasingTripleCount = countIncreasing tripleSum
+  let increasingTripleCount = countIncreasing 3 measurements
   putStrLn $ "Number of increasing triples: " ++ show increasingTripleCount
