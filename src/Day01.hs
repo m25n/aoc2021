@@ -1,15 +1,11 @@
-module Lib
-  ( day01,
-  )
-where
+module Day01 (run) where
 
+import Common (readLines)
+import Control.Applicative ((<|>))
 import Data.Function ((&))
 import qualified Data.List as List
 import Data.Maybe (fromMaybe)
 import Data.Monoid (Sum (Sum, getSum))
-
-readLines :: String -> IO [String]
-readLines = fmap lines . readFile
 
 type WindowSize = Int
 
@@ -19,8 +15,8 @@ countIncreasing n measurements =
     & foldMap (Sum . fromEnum)
     & getSum
 
-day01 :: IO ()
-day01 = do
+run :: IO ()
+run = do
   measurements <- fmap read <$> readLines "./input/day01"
 
   let increasingCount = countIncreasing 1 measurements

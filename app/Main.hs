@@ -2,7 +2,8 @@ module Main where
 
 import Control.Monad (forM_, when)
 import qualified Data.List as List
-import Lib
+import qualified Day01
+import qualified Day02
 import qualified System.Environment as Env
 
 main :: IO ()
@@ -12,6 +13,7 @@ main = do
   forM_ args $ \dayId -> do
     putStrLn $ "running " ++ dayId ++ ":"
     case dayId of
-      "day01" -> day01
+      "day01" -> Day01.run
+      "day02" -> Day02.run
       _ -> putStrLn $ "error: unknown day " ++ dayId
     putStrLn ""
