@@ -28,6 +28,7 @@ library
       Common
       Day01
       Day02
+      Day03
   other-modules:
       Paths_aoc2021
   hs-source-dirs:

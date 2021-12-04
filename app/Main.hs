@@ -4,6 +4,7 @@ import Control.Monad (forM_, when)
 import qualified Data.List as List
 import qualified Day01
 import qualified Day02
+import qualified Day03
 import qualified System.Environment as Env
 
 main :: IO ()
@@ -15,5 +16,6 @@ main = do
     case dayId of
       "day01" -> Day01.run
       "day02" -> Day02.run
+      "day03" -> Day03.run
       _ -> putStrLn $ "error: unknown day " ++ dayId
     putStrLn ""
