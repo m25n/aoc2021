@@ -70,7 +70,7 @@ firstWinner before num after = do
 lastWinner :: Strategy
 lastWinner before num after = do
   winner <- firstWinner before num after
-  if length (filter isWinner after) == length after - 1
+  if length (filter isWinner after) == length after
     then return winner
     else Nothing
 
