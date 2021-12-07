@@ -46,41 +46,49 @@ isWinner status =
   Map.size (Map.filter (== 5) (rows status)) > 0
     || Map.size (Map.filter (== 5) (cols status)) > 0
 
-playStep :: Int -> [Board] -> [Board]
-playStep num = fmap (mark num)
-
-playSteps :: Game -> [(Int, [Board])]
-playSteps (Game nums boards) = zip nums (drop 1 $ scanl' (flip playStep) boards nums)
-
-firstWinner :: [(Int, [Board])] -> Maybe (Int, Board)
-firstWinner steps =
-  join (find isJust (uncurry extractWinner <$> steps))
-  where
-    extractWinner :: Int -> [Board] -> Maybe (Int, Board)
-    extractWinner num boards = (,) num <$> find isWinner boards
-
-lastWinner :: [(Int, [Board])] -> Maybe (Int, Board)
-lastWinner steps =
-  join (find isJust (uncurry maybeLastWinner <$> zip (drop 1 rSteps) rSteps))
-  where
-    rSteps = reverse steps
-
-    maybeLastWinner :: (Int, [Board]) -> (Int, [Board]) -> Maybe (Int, Board)
-    maybeLastWinner (_, beforeBoards) (num, afterBoards) =
-      (,) num . snd <$> find (uncurry (/=) . bimap isWinner isWinner) (zip beforeBoards afterBoards)
-
 score :: Int -> Board -> Int
 score num board = num * unmarkedSum board
 
+step :: [Board] -> Int -> [Board]
+step boards num = fmap (mark num) boards
+
+type Strategy =
+  -- | board states before drawn number is applied
+  [Board] ->
+  -- | drawn number
+  Int ->
+  -- | board states after drawn number is applied
+  [Board] ->
+  -- | drawn number + winning board (if there is one)
+  Maybe (Int, Board)
+
+firstWinner :: Strategy
+firstWinner before num after = do
+  (_, winner) <- find (uncurry (/=) . bimap isWinner isWinner) (zip before after)
+  return (num, winner)
+
+lastWinner :: Strategy
+lastWinner before num after = do
+  winner <- firstWinner before num after
+  if length (filter isWinner after) == length after - 1
+    then return winner
+    else Nothing
+
 data Game = Game [Int] [Board] deriving (Show)
 
-fromMatrix :: [[Int]] -> Board
-fromMatrix m = Board (mkUmarked m) IntMap.empty IntMap.empty
+play :: Strategy -> Game -> Maybe (Int, Board)
+play strategy (Game nums boards) =
+  join (find isJust (zipWith3 strategy steps (drop 1 nums) (drop 1 steps)))
   where
-    mkUmarked :: [[Int]] -> IntMap [(Int, Int)]
-    mkUmarked rows = IntMap.fromList $ concat $ zipWith mkUmarkedRow [0 ..] rows
-    mkUmarkedRow :: Int -> [Int] -> [(Int, [(Int, Int)])]
-    mkUmarkedRow row cols = zipWith (\col num -> (num, [(row, col)])) [0 ..] cols
+    steps = drop 1 $ scanl' step boards nums
+
+fromMatrix :: [[Int]] -> Board
+fromMatrix rows = Board unmarked' IntMap.empty IntMap.empty
+  where
+    unmarked' = IntMap.fromListWith (++) $ do
+      (row, cols) <- zip [0 ..] rows
+      (col, num) <- zip [0 ..] cols
+      return (num, [(row, col)])
 
 parser :: Parsec Text () Game
 parser =
@@ -88,17 +96,16 @@ parser =
     <$> (parseInt `sepBy` Char.char ',')
     <* Char.endOfLine
     <* Char.endOfLine
-    <*> (parseBingoBoard `sepEndBy1` Char.endOfLine)
-    <* eof
+    <*> (parseBoard `sepEndBy1` Char.endOfLine)
   where
     parseInt :: Parsec Text () Int
     parseInt = many1 Char.digit >>= either fail return . readEither
 
-    parseBingoLine :: Parsec Text () [Int]
-    parseBingoLine = many (Char.char ' ') *> parseInt `sepBy1` many1 (Char.char ' ')
+    parseLine :: Parsec Text () [Int]
+    parseLine = many (Char.char ' ') *> parseInt `sepBy1` many1 (Char.char ' ')
 
-    parseBingoBoard :: Parsec Text () Board
-    parseBingoBoard = fromMatrix <$> parseBingoLine `sepEndBy1` Char.endOfLine
+    parseBoard :: Parsec Text () Board
+    parseBoard = fromMatrix <$> parseLine `sepEndBy1` Char.endOfLine
 
 run :: IO ()
 run = do
@@ -107,7 +114,7 @@ run = do
   case res of
     Left err -> putStrLn $ "error: " ++ show err
     Right game -> do
-      let first = uncurry score <$> firstWinner (playSteps game)
+      let first = uncurry score <$> play firstWinner game
       putStrLn $ "first winner: " ++ show first
-      let last = uncurry score <$> lastWinner (playSteps game)
+      let last = uncurry score <$> play lastWinner game
       putStrLn $ "last winner: " ++ show last
