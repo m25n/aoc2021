@@ -32,6 +32,7 @@ library
       Day04
       Day05
       Day06
+      Day07
   other-modules:
       Paths_aoc2021
   hs-source-dirs:
