@@ -27,10 +27,8 @@ step gen =
         & IntMap.insertWith (+) 6 births
         & IntMap.delete (-1)
 
-type Days = Int
-
-simulate :: Days -> Gen -> Gen
-simulate days = (!! days) . iterate step
+simulate :: Gen -> [Gen]
+simulate = iterate step
 
 parseGen :: Text -> Either String Gen
 parseGen = fmap mkGen . traverse (fmap fst . Read.decimal) . Text.splitOn ","
@@ -42,5 +40,6 @@ run = do
   case res of
     Left err -> print err
     Right firstGen -> do
-      putStrLn ("population after 80 days: " ++ show (sum (simulate 80 firstGen)))
-      putStrLn ("population after 256 days: " ++ show (sum (simulate 256 firstGen)))
+      let days = simulate firstGen
+      putStrLn ("population after 80 days: " ++ show (sum (days !! 80)))
+      putStrLn ("population after 256 days: " ++ show (sum (days !! 256)))
