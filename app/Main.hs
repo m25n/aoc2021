@@ -6,6 +6,7 @@ import qualified Day01
 import qualified Day02
 import qualified Day03
 import qualified Day04
+import qualified Day05
 import qualified System.Environment as Env
 
 main :: IO ()
@@ -19,5 +20,6 @@ main = do
       "day02" -> Day02.run
       "day03" -> Day03.run
       "day04" -> Day04.run
+      "day05" -> Day05.run
       _ -> putStrLn $ "error: unknown day " ++ dayId
     putStrLn ""
